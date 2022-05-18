@@ -8,7 +8,7 @@ library(RStoolbox)
 library(rgdal)
 library(ggplot2)
 
-setwd("/Users/anareis/OneDrive/MSc_Unibo/Thesis/data/")
+setwd("/Users/anareis/Library/CloudStorage/OneDrive-Personal/MSc_Unibo/Thesis/data/AuxData/")
 
 # MapTheme for plotting
 MapTheme <- list(theme(
@@ -88,31 +88,18 @@ cs2_sa
 ggR(cs2_sa, 1:4, geom_raster = TRUE) + scale_fill_viridis_c(name = "Spectral angle land use", direction = -1) + MapTheme
 dev.off()
 
-# plot RGB images 
-pRGB <- raster("T21KVU_20211207T140049_TCI_10m.jp2") # TCI being the RGB image
-pRGB
-plot(pRGB) # pantanal's image
+# plot true/false colour images
+plotRGB(pstack, r=3, g=2, b=1, scale=maxValue(pstack[[1]]), stretch="lin") #true image pantanal
 
-cRGB <- raster("T22KBC_20211226T134211_TCI_10m.jp2") # TCI being the RGB image
-cRGB
-plot(cRGB) # cerrado's image
+plotRGB(cstack, r=3, g=2, b=1, scale=maxValue(cstack[[1]]), stretch="lin") #true image cerrado
 
-# plot false colour images
-# combine the bands 8, 4 and 3 of s2 10 m
-# pantanal's images
-pfc_stack <-  stack(raster("T21KVU_20211207T140049_B08_10m.jp2"), raster("T21KVU_20211207T140049_B04_10m.jp2"), raster("T21KVU_20211207T140049_B03_10m.jp2"))
-plotRGB(pfc_stack, r=3, g=2, b=1, stretch="Lin")
+plotRGB(pstack, r=9, g=2, b=1, scale=maxValue(pstack[[1]]), stretch="lin") #false image pantanal
+
+plotRGB(cstack, r=9, g=3, b=2, scale=maxValue(cstack[[1]]), stretch="lin") #false image cerrado
 
 # plot both images on a multiframe graph
-par(mfrow=c(4, 4))
-plot(pRGB)
-plot(cRGB)
-ggR(ps2_uc$map, forceCat = TRUE, geom_raster = TRUE) + scale_fill_viridis_d(name = "Cluster", option = "A") + MapTheme
-ggR(cs2_uc$map, forceCat = TRUE, geom_raster = TRUE) + scale_fill_viridis_d(name = "Cluster", option = "A") + MapTheme
-ggR(ps2_ucd$map, layer = 1:4, geom_raster = TRUE) + scale_fill_viridis_c(name = "Distance burnt area", direction = -1) + MapTheme
-ggR(cs2_ucd$map, layer = 1:4, geom_raster = TRUE) + scale_fill_viridis_c(name = "Distance burnt area", direction = -1) + MapTheme
-ggR(ps2_sa, 1:4, geom_raster = TRUE) + scale_fill_viridis_c(name = "Spectral angle burnt area", direction = -1) + MapTheme
-ggR(cs2_sa, 1:4, geom_raster = TRUE) + scale_fill_viridis_c(name = "Spectral angle burnt area", direction = -1) + MapTheme
-
-plot(l2011$B1_sre, col=clb)
-plot(l2011$B2_sre, col=clg)
+par(mfrow=c(2, 2))
+plotRGB(pstack, r=3, g=2, b=1, scale=maxValue(pstack[[1]]), stretch="lin") 
+plotRGB(pstack, r=9, g=2, b=1, scale=maxValue(pstack[[1]]), stretch="lin")
+plotRGB(cstack, r=3, g=2, b=1, scale=maxValue(cstack[[1]]), stretch="lin") 
+plotRGB(cstack, r=9, g=3, b=2, scale=maxValue(cstack[[1]]), stretch="lin")
