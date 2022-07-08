@@ -2,13 +2,21 @@
 
 install.packages("raster")
 install.packages("rgdal")
+install.packages("scales")
 
 library(raster)
 library(RStoolbox)
 library(rgdal)
 library(ggplot2)
+library(scales)
 
-setwd("/Users/anareis/Library/CloudStorage/OneDrive-Personal/MSc_Unibo/Thesis/data/AuxData/")
+setwd("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata")
+
+# re-scale B08 10m to 20m 
+p_band8A <- raster("T22KBC_20211226T134211_B8A_20m.jp2")
+p_band8_10 <- raster("T21KWB_20201003T140059_B08_10m.jp2")
+p_band8_20 <- rescale(p_band8_10, p_band8A)
+rescale(x, to = c(0, 1), from = range(x, na.rm = TRUE, finite = TRUE))
 
 # MapTheme for plotting
 MapTheme <- list(theme(
