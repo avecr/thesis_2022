@@ -8,15 +8,31 @@ library(raster)
 library(RStoolbox)
 library(rgdal)
 library(ggplot2)
-library(scales)
 
 setwd("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata")
 
-# re-scale B08 10m to 20m 
-p_band8A <- raster("T22KBC_20211226T134211_B8A_20m.jp2")
+# change resolution pantanal B08 10m to 20m 
 p_band8_10 <- raster("T21KWB_20201003T140059_B08_10m.jp2")
-p_band8_20 <- rescale(p_band8_10, p_band8A)
-rescale(x, to = c(0, 1), from = range(x, na.rm = TRUE, finite = TRUE))
+p_band8_20 <- aggregate(p_band8_10, fact=2)
+writeRaster(p_band8_20, filename=file.path("T21KWB_20201003T140059_B08_20m.tif"), format="GTiff", overwrite=TRUE)
+
+# import shapefile of pantanal area and crop images
+shp_area_pantanal <-shapefile("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/area_pantanal.shp")
+p_1 <- crop(raster("T21KWB_20201003T140059_B02_20m.jp2"),shp_area_pantanal)
+p_2 <- crop(raster("T21KWB_20201003T140059_B03_20m.jp2"),shp_area_pantanal)
+p_3 <- crop(raster("T21KWB_20201003T140059_B04_20m.jp2"),shp_area_pantanal)
+p_4 <- crop(raster("T21KWB_20201003T140059_B05_20m.jp2"),shp_area_pantanal)
+p_5 <- crop(raster("T21KWB_20201003T140059_B06_20m.jp2"),shp_area_pantanal)
+p_6 <- crop(raster("T21KWB_20201003T140059_B07_20m.jp2"),shp_area_pantanal)
+p_7 <- crop(raster("T21KWB_20201003T140059_B8A_20m.jp2"),shp_area_pantanal)
+p_8 <- crop(raster("T21KWB_20201003T140059_B11_20m.jp2"),shp_area_pantanal)
+p_9 <- crop(raster("T21KWB_20201003T140059_B12_20m.jp2"),shp_area_pantanal)
+p_10 <- crop(p_band8_20,shp_area_vaia)
+
+# change resolution cerrado B08 10m to 20m 
+c_band8_10 <- raster("")
+c_band8_20 <- aggregate(c_band8_10, fact=2)
+writeRaster(c_band8_20, filename=file.path(""), format="GTiff", overwrite=TRUE)
 
 # MapTheme for plotting
 MapTheme <- list(theme(
