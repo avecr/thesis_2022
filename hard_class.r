@@ -1,4 +1,4 @@
-# R code for testing RSTollbox distances and spectral angle mapper
+# R code for testing fuzy classification of Sentinel-2 imageries using RSTollbox
 
 install.packages("raster")
 install.packages("rgdal")
@@ -17,22 +17,22 @@ p_band8_20 <- aggregate(p_band8_10, fact=2)
 writeRaster(p_band8_20, filename=file.path("T21KWB_20201003T140059_B08_20m.tif"), format="GTiff", overwrite=TRUE)
 
 # import shapefile of pantanal area and crop images
-shp_area_pantanal <-shapefile("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/area_pantanal.shp")
-p_1 <- crop(raster("T21KWB_20201003T140059_B02_20m.jp2"),shp_area_pantanal)
-p_2 <- crop(raster("T21KWB_20201003T140059_B03_20m.jp2"),shp_area_pantanal)
-p_3 <- crop(raster("T21KWB_20201003T140059_B04_20m.jp2"),shp_area_pantanal)
-p_4 <- crop(raster("T21KWB_20201003T140059_B05_20m.jp2"),shp_area_pantanal)
-p_5 <- crop(raster("T21KWB_20201003T140059_B06_20m.jp2"),shp_area_pantanal)
-p_6 <- crop(raster("T21KWB_20201003T140059_B07_20m.jp2"),shp_area_pantanal)
-p_7 <- crop(raster("T21KWB_20201003T140059_B8A_20m.jp2"),shp_area_pantanal)
-p_8 <- crop(raster("T21KWB_20201003T140059_B11_20m.jp2"),shp_area_pantanal)
-p_9 <- crop(raster("T21KWB_20201003T140059_B12_20m.jp2"),shp_area_pantanal)
-p_10 <- crop(p_band8_20,shp_area_vaia)
+shp_pantanal <-shapefile("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/shp_pantanal")
+p1 <- crop(raster("T21KWB_20201003T140059_B02_20m.jp2"),shp_pantanal)
+p2 <- crop(raster("T21KWB_20201003T140059_B03_20m.jp2"),shp_pantanal)
+p3 <- crop(raster("T21KWB_20201003T140059_B04_20m.jp2"),shp_pantanal)
+p4 <- crop(raster("T21KWB_20201003T140059_B05_20m.jp2"),shp_pantanal)
+p5 <- crop(raster("T21KWB_20201003T140059_B06_20m.jp2"),shp_pantanal)
+p6 <- crop(raster("T21KWB_20201003T140059_B07_20m.jp2"),shp_pantanal)
+p7 <- crop(raster("T21KWB_20201003T140059_B8A_20m.jp2"),shp_pantanal)
+p8 <- crop(raster("T21KWB_20201003T140059_B11_20m.jp2"),shp_pantanal)
+p9 <- crop(raster("T21KWB_20201003T140059_B12_20m.jp2"),shp_pantanal)
+p10 <- crop(raster("T21KWB_20201003T140059_B08_20m.tif"),shp_pantanal)
 
-# change resolution cerrado B08 10m to 20m 
-c_band8_10 <- raster("")
-c_band8_20 <- aggregate(c_band8_10, fact=2)
-writeRaster(c_band8_20, filename=file.path(""), format="GTiff", overwrite=TRUE)
+# put all the images together with the stack() and save as .tif
+burnt_p <- stack(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+burnt_p
+writeRaster(burnt_p, filename=file.path("burnt_p.tif"), format="GTiff", overwrite=TRUE)
 
 # MapTheme for plotting
 MapTheme <- list(theme(
@@ -40,28 +40,6 @@ MapTheme <- list(theme(
  axis.text.y = element_text(angle = 90, hjust = 0.5),
  axis.title = element_blank()
 ))  
-
-# import Sentinel 2 data
-# creat lists with the images
-list1 <- list.files(pattern = "T21KVU_20211207T140049_B") # Pantanal's area (p)
-list1 # 9 images
-
-list2 <- list.files(pattern = "T22KBC_20211226T134211_B") # Cerrado's area (c)
-list2 # 9 images
-
-# import the single layers with raster()
-import1 <- lapply(list1,raster)
-import1
-
-import2 <- lapply(list2,raster)
-import2
-
-# put all the images together with the stack()
-pstack <- stack(import1)
-pstack
-
-cstack <- stack(import2)
-cstack
 
 # testing RStoolbox: unsupervised classification default
 # burnt area in Pantanal (p)
@@ -127,3 +105,27 @@ plotRGB(pstack, r=3, g=2, b=1, scale=maxValue(pstack[[1]]), stretch="lin")
 plotRGB(pstack, r=9, g=2, b=1, scale=maxValue(pstack[[1]]), stretch="lin")
 plotRGB(cstack, r=3, g=2, b=1, scale=maxValue(cstack[[1]]), stretch="lin") 
 plotRGB(cstack, r=9, g=3, b=2, scale=maxValue(cstack[[1]]), stretch="lin")
+
+
+
+#--------- OLD CODE --------- import Sentinel 2 data
+# creat lists with the images
+list1 <- list.files(pattern = "T21KVU_20211207T140049_B") # Pantanal's area (p)
+list1 # 9 images
+
+list2 <- list.files(pattern = "T22KBC_20211226T134211_B") # Cerrado's area (c)
+list2 # 9 images
+
+# import the single layers with raster()
+import1 <- lapply(list1,raster)
+import1
+
+import2 <- lapply(list2,raster)
+import2
+
+# put all the images together with the stack()
+pstack <- stack(import1)
+pstack
+
+cstack <- stack(import2)
+cstack
