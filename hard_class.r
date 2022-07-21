@@ -71,6 +71,9 @@ burnt_umx
 
 ggR(burnt_umx, 1:3, geom_raster = TRUE) + scale_fill_viridis_c(name = "Probability", option = "inferno") + MapTheme
 
+# Supervised classification
+
+
 #---DEFORESTATION IN CERRADO
 
 # change resolution cerrado B08 10m to 20m 
