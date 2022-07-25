@@ -72,6 +72,23 @@ burnt_umx
 ggR(burnt_umx, 1:3, geom_raster = TRUE) + scale_fill_viridis_c(name = "Probability", option = "inferno") + MapTheme
 
 # Supervised classification
+burnt_p <- stack("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/burnt_p.tif")
+names(burnt_p) <- c('blue', 'green', 'red', 'red_5', 'red_6', 'red_7', 'n_NIR', 'SWIR1', 'SWIR2', 'NIR')
+
+# The class names and colors for plotting
+nlcdclass <- c("Burnt", "Mixed burnt", "Not burnt")
+classdf <- data.frame(classvalue1 = c(1,2,3), classnames1 = nlcdclass)
+# Hex codes of colors
+classcolor <- c("#5475A8", "#B50000", "#D2CDC0")
+
+# Import shp of pantanal with the polygons from each class (burnt, mixed burnt and not burnt)
+samp <- shapefile("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/s_shp_pantanal")
+samp
+# generate 300 point samples from the polygons
+ptsamp <- spsample(samp, 300, type='regular')
+# add the land cover class to the points
+ptsamp$class <- over(ptsamp, samp)$class
+
 
 
 #---DEFORESTATION IN CERRADO
@@ -95,9 +112,10 @@ c9 <- crop(raster("T23MNN_20220628T132251_B12_20m.jp2"),shp_cerrado)
 c10 <- crop(raster("T23MNN_20220628T132251_B08_20m.tif"),shp_cerrado)
 
 # put all the images together with the stack() and save as .tif
-defores_c <- stack(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10)
-defores_c
+# defores_c <- stack(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10)
+# defores_c
 # writeRaster(defores_c, filename=file.path("defores_c.tif"), format="GTiff", overwrite=TRUE)
+defores_c <- stack("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/defores_c.tif")
 
 # MapTheme for plotting
 MapTheme <- list(theme(
@@ -109,32 +127,30 @@ MapTheme <- list(theme(
 # deforestation area in Cerrado
 # unsupervised classification
 set.seed(42)
-defores_uc <- unsuperClass(defores_c, nClasses = 3, output = "classes")
+defores_uc <- unsuperClass(defores_c, nClasses = 2, output = "classes")
 defores_uc
 
 ggR(defores_uc$map, forceCat = TRUE, geom_raster = TRUE) + scale_fill_viridis_d(name = "Cluster", option = "A") + MapTheme
 
 # distances
 set.seed(42)
-defores_ucd <- unsuperClass(defores_c, nClasses = 3, output = "distances")
+defores_ucd <- unsuperClass(defores_c, nClasses = 2, output = "distances")
 defores_ucd
 
-ggR(defores_ucd$map, layer = 1:3, stretch="lin", geom_raster = TRUE) + scale_fill_viridis_c(name = "Distance", direction = -1, option = "inferno") + MapTheme
+ggR(defores_ucd$map, layer = 1:2, stretch="lin", geom_raster = TRUE) + scale_fill_viridis_c(name = "Distance", direction = -1, option = "inferno") + MapTheme
 
 # spectral angle mapper
 c_classCentroids <- defores_ucd$model$centers
 defores_sam <- sam(defores_c, em = c_classCentroids, angles = TRUE)
 defores_sam
 
-ggR(defores_sam, 1:3, geom_raster = TRUE) + scale_fill_viridis_c(name = "Spectral angle", direction = -1, option = "inferno") + MapTheme
+ggR(defores_sam, 1:2, geom_raster = TRUE) + scale_fill_viridis_c(name = "Spectral angle", direction = -1, option = "inferno") + MapTheme
 
 # Spectral unmixing
 defores_umx <- mesma(defores_c, em = c_classCentroids)
 defores_umx
 
-ggR(defores_umx, 1:3, geom_raster = TRUE) + scale_fill_viridis_c(name = "Probability", option = "inferno") + MapTheme
-
-
+ggR(defores_umx, 1:2, geom_raster = TRUE) + scale_fill_viridis_c(name = "Probability", option = "inferno") + MapTheme
 
 
 #--------- OLD CODE --------- import Sentinel 2 data
