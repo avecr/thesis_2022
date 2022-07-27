@@ -3,11 +3,15 @@
 install.packages("raster")
 install.packages("rgdal")
 install.packages("scales")
+install.packages("rasterVis")
+install.packages("rpart")
 
 library(raster)
 library(RStoolbox)
 library(rgdal)
 library(ggplot2)
+library(rasterVis)
+library(rpart)
 
 setwd("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata")
 
@@ -86,9 +90,40 @@ samp <- shapefile("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/
 samp
 # generate 300 point samples from the polygons
 ptsamp <- spsample(samp, 300, type='regular')
-# add the land cover class to the points
-ptsamp$class <- over(ptsamp, samp)$class
+# add the land cover id to the points
+ptsamp$id <- over(ptsamp, samp)$id
+# extract values with points
+df <- raster::extract(burnt_p, ptsamp)
+# to see some of the reflectance values
+head(df)
 
+# plot the training sites over the burnt_p bands to visualize the distribution of sampling locations 
+plt <- levelplot(burnt_p, col.regions = classcolor, main = "Distribution of Training Sites")
+plt
+
+# extract the layer values for the locations
+sampvals <- extract(burnt_p, ptsamp, df = TRUE)
+sampvals <- sampvals[, -1]
+# combine the id information with extracted values
+sampdata <- data.frame(classvalue = ptsamp$id, sampvals)
+
+# train the classification algorithm using training dataset
+
+# Train the model (trained classification model - cart)
+cart <- rpart(as.factor(classvalue)~., data=sampdata, method = 'class', minsplit = 5)
+# plot classification tree
+plot(cart, uniform=TRUE, main="Classification Tree")
+text(cart, cex = 0.8)
+
+# classify all cells in the burnt_p stack (make predictions)
+pr2020 <- predict(burnt_p, cart, type='class')
+pr2020
+# plot using rasterVis
+pr2020 <- ratify(pr2020)
+rat <- levels(pr2020)[[1]]
+rat$legend <- c("Burnt","Mixed burnt","Not burnt")
+levels(pr2020) <- rat
+levelplot(pr2020, maxpixels = 1e6, col.regions = classcolor, att = "legend", scales=list(draw=FALSE), main = "Supervised classification - Burnt Area")
 
 
 #---DEFORESTATION IN CERRADO
@@ -125,32 +160,82 @@ MapTheme <- list(theme(
 ))  
 
 # deforestation area in Cerrado
-# unsupervised classification
+#- Unsupervised classification
 set.seed(42)
 defores_uc <- unsuperClass(defores_c, nClasses = 2, output = "classes")
 defores_uc
 
 ggR(defores_uc$map, forceCat = TRUE, geom_raster = TRUE) + scale_fill_viridis_d(name = "Cluster", option = "A") + MapTheme
 
-# distances
+#- distances
 set.seed(42)
 defores_ucd <- unsuperClass(defores_c, nClasses = 2, output = "distances")
 defores_ucd
 
 ggR(defores_ucd$map, layer = 1:2, stretch="lin", geom_raster = TRUE) + scale_fill_viridis_c(name = "Distance", direction = -1, option = "inferno") + MapTheme
 
-# spectral angle mapper
+#- spectral angle mapper
 c_classCentroids <- defores_ucd$model$centers
 defores_sam <- sam(defores_c, em = c_classCentroids, angles = TRUE)
 defores_sam
 
 ggR(defores_sam, 1:2, geom_raster = TRUE) + scale_fill_viridis_c(name = "Spectral angle", direction = -1, option = "inferno") + MapTheme
 
-# Spectral unmixing
+#- Spectral unmixing
 defores_umx <- mesma(defores_c, em = c_classCentroids)
 defores_umx
 
 ggR(defores_umx, 1:2, geom_raster = TRUE) + scale_fill_viridis_c(name = "Probability", option = "inferno") + MapTheme
+
+#- Supervised classification
+defores_c <- stack("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/defores_c.tif")
+names(defores_c) <- c('blue', 'green', 'red', 'red_5', 'red_6', 'red_7', 'n_NIR', 'SWIR1', 'SWIR2', 'NIR')
+
+# The class names and colors for plotting
+nlcdclass2 <- c("Vegetation", "Land use change")
+classdf2 <- data.frame(classvalue1 = c(1,2), classnames1 = nlcdclass)
+# Hex codes of colors
+classcolor2 <- c("#5475A8", "#B50000")
+
+# Import shp of pantanal with the polygons from each class (vegetation and land use change)
+samp2 <- shapefile("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/s_shp_pantanal")
+samp2
+# generate 300 point samples from the polygons
+ptsamp <- spsample(samp, 300, type='regular')
+# add the land cover id to the points
+ptsamp$id <- over(ptsamp, samp)$id
+# extract values with points
+df <- raster::extract(burnt_p, ptsamp)
+# to see some of the reflectance values
+head(df)
+
+# plot the training sites over the burnt_p bands to visualize the distribution of sampling locations 
+plt <- levelplot(burnt_p, col.regions = classcolor, main = "Distribution of Training Sites")
+plt
+
+# extract the layer values for the locations
+sampvals <- extract(burnt_p, ptsamp, df = TRUE)
+sampvals <- sampvals[, -1]
+# combine the id information with extracted values
+sampdata <- data.frame(classvalue = ptsamp$id, sampvals)
+
+# train the classification algorithm using training dataset
+
+# Train the model (trained classification model - cart)
+cart <- rpart(as.factor(classvalue)~., data=sampdata, method = 'class', minsplit = 5)
+# plot classification tree
+plot(cart, uniform=TRUE, main="Classification Tree")
+text(cart, cex = 0.8)
+
+# classify all cells in the burnt_p stack (make predictions)
+pr2020 <- predict(burnt_p, cart, type='class')
+pr2020
+# plot using rasterVis
+pr2020 <- ratify(pr2020)
+rat <- levels(pr2020)[[1]]
+rat$legend <- c("Burnt","Mixed burnt","Not burnt")
+levels(pr2020) <- rat
+levelplot(pr2020, maxpixels = 1e6, col.regions = classcolor, att = "legend", scales=list(draw=FALSE), main = "Supervised classification - Burnt Area")
 
 
 #--------- OLD CODE --------- import Sentinel 2 data
