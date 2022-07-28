@@ -241,28 +241,28 @@ levelplot(pr2022, maxpixels = 1e6, col.regions = classcolor2, att = "legend", sc
 #---FOREST TYPES BOLZANO ITALY
 
 # change resolution bolzano B08 10m to 20m 
-b_band8_10 <- raster("T23MNN_20220628T132251_B08_10m.jp2")
+b_band8_10 <- raster("T32TPS_20200905T101031_B08_10m.jp2")
 b_band8_20 <- aggregate(b_band8_10, fact=2)
-writeRaster(c_band8_20, filename=file.path("T23MNN_20220628T132251_B08_20m.tif"), format="GTiff", overwrite=TRUE)
+writeRaster(b_band8_20, filename=file.path("T32TPS_20200905T101031_B08_20m.tif"), format="GTiff", overwrite=TRUE)
 
 # import shapefile of cerrado area and crop images
-shp_cerrado <-shapefile("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/shp_cerrado")
-c1 <- crop(raster("T23MNN_20220628T132251_B02_20m.jp2"),shp_cerrado)
-c2 <- crop(raster("T23MNN_20220628T132251_B03_20m.jp2"),shp_cerrado)
-c3 <- crop(raster("T23MNN_20220628T132251_B04_20m.jp2"),shp_cerrado)
-c4 <- crop(raster("T23MNN_20220628T132251_B05_20m.jp2"),shp_cerrado)
-c5 <- crop(raster("T23MNN_20220628T132251_B06_20m.jp2"),shp_cerrado)
-c6 <- crop(raster("T23MNN_20220628T132251_B07_20m.jp2"),shp_cerrado)
-c7 <- crop(raster("T23MNN_20220628T132251_B8A_20m.jp2"),shp_cerrado)
-c8 <- crop(raster("T23MNN_20220628T132251_B11_20m.jp2"),shp_cerrado)
-c9 <- crop(raster("T23MNN_20220628T132251_B12_20m.jp2"),shp_cerrado)
-c10 <- crop(raster("T23MNN_20220628T132251_B08_20m.tif"),shp_cerrado)
+shp_bolzano <-shapefile("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/extent_polygon")
+b1 <- crop(raster("T32TPS_20200905T101031_B02_20m.jp2"),shp_bolzano)
+b2 <- crop(raster("T32TPS_20200905T101031_B03_20m.jp2"),shp_bolzano)
+b3 <- crop(raster("T32TPS_20200905T101031_B04_20m.jp2"),shp_bolzano)
+b4 <- crop(raster("T32TPS_20200905T101031_B05_20m.jp2"),shp_bolzano)
+b5 <- crop(raster("T32TPS_20200905T101031_B06_20m.jp2"),shp_bolzano)
+b6 <- crop(raster("T32TPS_20200905T101031_B07_20m.jp2"),shp_bolzano)
+b7 <- crop(raster("T32TPS_20200905T101031_B8A_20m.jp2"),shp_bolzano)
+b8 <- crop(raster("T32TPS_20200905T101031_B11_20m.jp2"),shp_bolzano)
+b9 <- crop(raster("T32TPS_20200905T101031_B12_20m.jp2"),shp_bolzano)
+b10 <- crop(raster("T32TPS_20200905T101031_B08_20m.tif"),shp_bolzano)
 
 # put all the images together with the stack() and save as .tif
-# defores_c <- stack(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10)
-# defores_c
-# writeRaster(defores_c, filename=file.path("defores_c.tif"), format="GTiff", overwrite=TRUE)
-defores_c <- stack("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/defores_c.tif")
+# bolzano_c <- stack(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10)
+# bolzano_c
+# writeRaster(bolzano_c, filename=file.path("bolzano_c.tif"), format="GTiff", overwrite=TRUE)
+bolzano_c <- stack("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/bolzano_c.tif")
 
 # MapTheme for plotting
 MapTheme <- list(theme(
@@ -271,40 +271,40 @@ MapTheme <- list(theme(
  axis.title = element_blank()
 ))  
 
-# deforestation area in Cerrado
+# continuous environment in Bolzano
 #- Unsupervised classification
 set.seed(42)
-defores_uc <- unsuperClass(defores_c, nClasses = 2, output = "classes")
-defores_uc
+bolzano_uc <- unsuperClass(bolzano_c, nClasses = 3, output = "classes")
+bolzano_uc
 
-ggR(defores_uc$map, forceCat = TRUE, geom_raster = TRUE) + scale_fill_viridis_d(name = "Cluster", option = "A") + MapTheme
+ggR(bolzano_uc$map, forceCat = TRUE, geom_raster = TRUE) + scale_fill_viridis_d(name = "Cluster", option = "A") + MapTheme
 
 #- distances
 set.seed(42)
-defores_ucd <- unsuperClass(defores_c, nClasses = 2, output = "distances")
-defores_ucd
+bolzano_ucd <- unsuperClass(bolzano_c, nClasses = 3, output = "distances")
+bolzano_ucd
 
-ggR(defores_ucd$map, layer = 1:2, stretch="lin", geom_raster = TRUE) + scale_fill_viridis_c(name = "Distance", direction = -1, option = "inferno") + MapTheme
+ggR(bolzano_ucd$map, layer = 1:3, stretch="lin", geom_raster = TRUE) + scale_fill_viridis_c(name = "Distance", direction = -1, option = "inferno") + MapTheme
 
 #- spectral angle mapper
-c_classCentroids <- defores_ucd$model$centers
-defores_sam <- sam(defores_c, em = c_classCentroids, angles = TRUE)
-defores_sam
+c_classCentroids <- bolzano_ucd$model$centers
+bolzano_sam <- sam(bolzano_c, em = c_classCentroids, angles = TRUE)
+bolzano_sam
 
-ggR(defores_sam, 1:2, geom_raster = TRUE) + scale_fill_viridis_c(name = "Spectral angle", direction = -1, option = "inferno") + MapTheme
+ggR(bolzano_sam, 1:2, geom_raster = TRUE) + scale_fill_viridis_c(name = "Spectral angle", direction = -1, option = "inferno") + MapTheme
 
 #- Spectral unmixing
-defores_umx <- mesma(defores_c, em = c_classCentroids)
-defores_umx
+bolzano_umx <- mesma(bolzano_c, em = c_classCentroids)
+bolzano_umx
 
-ggR(defores_umx, 1:2, geom_raster = TRUE) + scale_fill_viridis_c(name = "Probability", option = "inferno") + MapTheme
+ggR(bolzano_umx, 1:2, geom_raster = TRUE) + scale_fill_viridis_c(name = "Probability", option = "inferno") + MapTheme
 
 #- Supervised classification
-defores_c <- stack("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/defores_c.tif")
-names(defores_c) <- c('blue', 'green', 'red', 'red_5', 'red_6', 'red_7', 'n_NIR', 'SWIR1', 'SWIR2', 'NIR')
+bolzano_c <- stack("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/bolzano_c.tif")
+names(bolzano_c) <- c('blue', 'green', 'red', 'red_5', 'red_6', 'red_7', 'n_NIR', 'SWIR1', 'SWIR2', 'NIR')
 
 # The class names and colors for plotting
-nlcdclass2 <- c("Vegetation", "Land use change")
+nlcdclass2 <- c("Vegetation", "Land use change", "")
 classdf2 <- data.frame(classvalue1 = c(1,2), classnames1 = nlcdclass)
 # Hex codes of colors
 classcolor2 <- c("#5475A8", "#B50000")
