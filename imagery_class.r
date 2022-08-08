@@ -291,63 +291,63 @@ c_classCentroids <- bolzano_ucd$model$centers
 bolzano_sam <- sam(bolzano_c, em = c_classCentroids, angles = TRUE)
 bolzano_sam
 
-ggR(bolzano_sam, 1:2, geom_raster = TRUE) + scale_fill_viridis_c(name = "Spectral angle", direction = -1, option = "inferno") + MapTheme
+ggR(bolzano_sam, 1:3, geom_raster = TRUE) + scale_fill_viridis_c(name = "Spectral angle", direction = -1, option = "inferno") + MapTheme
 
 #- Spectral unmixing
 bolzano_umx <- mesma(bolzano_c, em = c_classCentroids)
 bolzano_umx
 
-ggR(bolzano_umx, 1:2, geom_raster = TRUE) + scale_fill_viridis_c(name = "Probability", option = "inferno") + MapTheme
+ggR(bolzano_umx, 1:3, geom_raster = TRUE) + scale_fill_viridis_c(name = "Probability", option = "inferno") + MapTheme
 
 #- Supervised classification
 bolzano_c <- stack("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/bolzano_c.tif")
 names(bolzano_c) <- c('blue', 'green', 'red', 'red_5', 'red_6', 'red_7', 'n_NIR', 'SWIR1', 'SWIR2', 'NIR')
 
 # The class names and colors for plotting
-nlcdclass2 <- c("Vegetation", "Land use change", "")
-classdf2 <- data.frame(classvalue1 = c(1,2), classnames1 = nlcdclass)
+nlcdclass3 <- c("Spruce forest", "Beech forest", "Pine forest")
+classdf3 <- data.frame(classvalue1 = c(1, 2, 3), classnames1 = nlcdclass3)
 # Hex codes of colors
-classcolor2 <- c("#5475A8", "#B50000")
+classcolor3 <- c("#5475A8", "#B50000", "#D2CDC0")
 
-# Import shp of pantanal with the polygons from each class (vegetation and land use change)
-samp2 <- shapefile("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/s_shp_cerrado")
-samp2
+# Import shp of bolzano with the polygons from each class/forest (spruce, beech and pine)
+samp3 <- shapefile("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/s_shp_bolzano")
+samp3
 # generate 300 point samples from the polygons
-ptsamp2 <- spsample(samp2, 300, type='regular')
+ptsamp3 <- spsample(samp3, 300, type='regular')
 # add the land cover id to the points
-ptsamp2$id <- over(ptsamp2, samp2)$id
+ptsamp3$id <- over(ptsamp3, samp3)$id
 # extract values with points
-df2 <- raster::extract(defores_c, ptsamp2)
+df3 <- raster::extract(bolzano_c, ptsamp3)
 # to see some of the reflectance values
-head(df2)
+head(df3)
 
 # plot the training sites over the burnt_p bands to visualize the distribution of sampling locations 
-plt2 <- levelplot(defores_c, col.regions = classcolor2, main = "Distribution of Training Sites")
-plt2
+plt3 <- levelplot(bolzano_c, col.regions = classcolor3, main = "Distribution of Training Sites - Bolzano Area")
+plt3
 
 # extract the layer values for the locations
-sampvals2 <- extract(defores_c, ptsamp2, df = TRUE)
-sampvals2 <- sampvals2[, -1]
+sampvals3 <- extract(bolzano_c, ptsamp3, df = TRUE)
+sampvals3 <- sampvals3[, -1]
 # combine the id information with extracted values
-sampdata2 <- data.frame(classvalue = ptsamp2$id, sampvals2)
+sampdata3 <- data.frame(classvalue = ptsamp3$id, sampvals3)
 
 # train the classification algorithm using training dataset
 
 # Train the model (trained classification model - cart)
-cart2 <- rpart(as.factor(classvalue)~., data=sampdata2, method = 'class', minsplit = 5)
+cart3 <- rpart(as.factor(classvalue)~., data=sampdata3, method = 'class', minsplit = 5)
 # plot classification tree
-plot(cart2, uniform=TRUE, main="Classification Tree")
-text(cart2, cex = 0.8)
+plot(cart3, uniform=TRUE, main="Classification Tree")
+text(cart3, cex = 0.8)
 
 # classify all cells in the burnt_p stack (make predictions)
-pr2022 <- predict(defores_c, cart2, type='class')
+pr2022 <- predict(bolzano_c, cart3, type='class')
 pr2022
 # plot using rasterVis
 pr2022 <- ratify(pr2022)
 rat2 <- levels(pr2022)[[1]]
-rat2$legend <- c("Vegetation","Land use change")
+rat2$legend <- c("Spruce forest","Beech forest", "Pinewood forest")
 levels(pr2022) <- rat2
-levelplot(pr2022, maxpixels = 1e6, col.regions = classcolor2, att = "legend", scales=list(draw=FALSE), main = "Supervised classification - Land use Area")
+levelplot(pr2022, maxpixels = 1e6, col.regions = classcolor3, att = "legend", scales=list(draw=FALSE), main = "Supervised classification - Bolzano Area")
 
 
 #--------- OLD CODE --------- import Sentinel 2 data
