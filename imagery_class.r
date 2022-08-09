@@ -304,7 +304,7 @@ bolzano_c <- stack("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis
 names(bolzano_c) <- c('blue', 'green', 'red', 'red_5', 'red_6', 'red_7', 'n_NIR', 'SWIR1', 'SWIR2', 'NIR')
 
 # The class names and colors for plotting
-nlcdclass3 <- c("Spruce forest", "Beech forest", "Pine forest")
+nlcdclass3 <- c("Beech forest", "Spruce forest", "Pine forest")
 classdf3 <- data.frame(classvalue1 = c(1, 2, 3), classnames1 = nlcdclass3)
 # Hex codes of colors
 classcolor3 <- c("#5475A8", "#B50000", "#D2CDC0")
@@ -349,57 +349,5 @@ rat2$legend <- c("Spruce forest","Beech forest", "Pinewood forest")
 levels(pr2022) <- rat2
 levelplot(pr2022, maxpixels = 1e6, col.regions = classcolor3, att = "legend", scales=list(draw=FALSE), main = "Supervised classification - Bolzano Area")
 
+# validate the methods
 
-#--------- OLD CODE --------- import Sentinel 2 data
-# creat lists with the images
-list1 <- list.files(pattern = "T21KVU_20211207T140049_B") # Pantanal's area (p)
-list1 # 9 images
-
-list2 <- list.files(pattern = "T22KBC_20211226T134211_B") # Cerrado's area (c)
-list2 # 9 images
-
-# import the single layers with raster()
-import1 <- lapply(list1,raster)
-import1
-
-import2 <- lapply(list2,raster)
-import2
-
-# put all the images together with the stack()
-pstack <- stack(import1)
-pstack
-
-cstack <- stack(import2)
-cstack
-
-# burnt area in Cerrado (c)
-set.seed(42)
-cs2_uc <- unsuperClass(cstack, nClasses = 4, output = "classes")
-cs2_uc
-
-ggR(cs2_uc$map, forceCat = TRUE, geom_raster = TRUE) + scale_fill_viridis_d(name = "Cluster", option = "A") + MapTheme
-
-# land use area in Cerrado 
-cs2_ucd <- unsuperClass(cstack, nClasses = 4, output = "distances")
-cs2_ucd
-
-ggR(cs2_ucd$map, layer = 1:4, geom_raster = TRUE) + scale_fill_viridis_c(name = "Distance land use area", direction = -1) + MapTheme
-dev.off()
-
-# land use area in Cerrado
-c_classCentroids <- cs2_ucd$model$centers
-
-cs2_sa <- sam(pstack, em = c_classCentroids, angles = TRUE)
-cs2_sa
-
-ggR(cs2_sa, 1:4, geom_raster = TRUE) + scale_fill_viridis_c(name = "Spectral angle land use", direction = -1) + MapTheme
-dev.off()
-
-# plot true/false colour images
-plotRGB(pstack, r=3, g=2, b=1, scale=maxValue(pstack[[1]]), stretch="lin") #true image pantanal
-
-plotRGB(cstack, r=3, g=2, b=1, scale=maxValue(cstack[[1]]), stretch="lin") #true image cerrado
-
-plotRGB(pstack, r=9, g=2, b=1, scale=maxValue(pstack[[1]]), stretch="lin") #false image pantanal
-
-plotRGB(cstack, r=9, g=3, b=2, scale=maxValue(cstack[[1]]), stretch="lin") #false image cerrado
