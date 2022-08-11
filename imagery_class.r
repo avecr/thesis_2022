@@ -22,23 +22,14 @@ setwd("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata
 # p_band8_20 <- aggregate(p_band8_10, fact=2)
 # writeRaster(p_band8_20, filename=file.path("T21KWB_20201003T140059_B08_20m.tif"), format="GTiff", overwrite=TRUE)
 
-# import shapefile of pantanal area and crop images
+# import shapefile of pantanal area, read all bands
 shp_pantanal <-shapefile("/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata/shp_pantanal")
-p1 <- crop(raster("T21KWB_20201003T140059_B02_20m.jp2"),shp_pantanal)
-p2 <- crop(raster("T21KWB_20201003T140059_B03_20m.jp2"),shp_pantanal)
-p3 <- crop(raster("T21KWB_20201003T140059_B04_20m.jp2"),shp_pantanal)
-p4 <- crop(raster("T21KWB_20201003T140059_B05_20m.jp2"),shp_pantanal)
-p5 <- crop(raster("T21KWB_20201003T140059_B06_20m.jp2"),shp_pantanal)
-p6 <- crop(raster("T21KWB_20201003T140059_B07_20m.jp2"),shp_pantanal)
-p7 <- crop(raster("T21KWB_20201003T140059_B8A_20m.jp2"),shp_pantanal)
-p8 <- crop(raster("T21KWB_20201003T140059_B11_20m.jp2"),shp_pantanal)
-p9 <- crop(raster("T21KWB_20201003T140059_B12_20m.jp2"),shp_pantanal)
-p10 <- crop(raster("T21KWB_20201003T140059_B08_20m.tif"),shp_pantanal)
-
-# put all the images together with the stack() and save as .tif
-burnt_p <- stack(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)
+p_lst <- list.files(pattern = "T21KWB_20201003T140059_B.*20m", full.names = TRUE)
+p_rst <- lapply(p_lst, FUN = raster)
+crop_p_rst <- lapply(p_rst, FUN = raster::crop, y = shp_pantanal)
+burnt_p <- stack(crop_p_rst)
 burnt_p
-# writeRaster(burnt_p, filename=file.path("burnt_p.tif"), format="GTiff", overwrite=TRUE)
+writeRaster(burnt_p, filename=file.path("burnt_p.tif"), format="GTiff", overwrite=TRUE)
 
 # MapTheme for plotting
 MapTheme <- list(theme(
