@@ -341,4 +341,14 @@ levels(pr2022) <- rat2
 levelplot(pr2022, maxpixels = 1e6, col.regions = classcolor3, att = "legend", scales=list(draw=FALSE), main = "Supervised classification - Bolzano Area")
 
 # validate the methods
+# burnt area unsupervised class
+# polygons to points - read the training polygons
+poly_burnt <- rgdal::readOGR(dsn   = "/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata", 
+                       layer = "ref_burnt", 
+                       stringsAsFactors = FALSE)
+poly_burnt@data$id <- as.integer(factor(poly_burnt@data$burnt_area))
+setDT(poly_burnt@data)
+
+
+
 
