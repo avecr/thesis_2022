@@ -340,7 +340,7 @@ rat2$legend <- c("Spruce forest","Beech forest", "Pinewood forest")
 levels(pr2022) <- rat2
 levelplot(pr2022, maxpixels = 1e6, col.regions = classcolor3, att = "legend", scales=list(draw=FALSE), main = "Supervised classification - Bolzano Area")
 
-# validate the methods
+#--- validate the methods
 # burnt area unsupervised class
 # polygons to points - read the training polygons
 poly_burnt <- rgdal::readOGR(dsn   = "/Users/anareis/Library/CloudStorage/OneDrive-Personal/Thesis/data/auxdata", 
@@ -349,6 +349,120 @@ poly_burnt <- rgdal::readOGR(dsn   = "/Users/anareis/Library/CloudStorage/OneDri
 poly_burnt@data$id <- as.integer(factor(poly_burnt@data$burnt_area))
 setDT(poly_burnt@data)
 
+# the polygons need to be projected using the Sentinel's CRS
+poly_burnt_utm <- sp::spTransform(poly_burnt, CRSobj = crop_burnt_p[[1]]@crs)
+
+# Create raster template
+template_rst <- raster(extent(burnt_p$burnt_p.1), 
+                       resolution = 20,
+                       crs = projection(burnt_p))
+
+poly_burnt_rst <- rasterize(poly_burnt_utm, template_rst, field = 'id')
+plot(poly_burnt_rst)
+
+poly_burnt_dt <- as.data.table(rasterToPoints(poly_burnt_rst))
+setnames(poly_burnt_dt, old = "layer", new = "id_cls")
+
+burnt_points <- SpatialPointsDataFrame(coords = poly_burnt_dt[, .(x, y)],
+                                 data = poly_burnt_dt,
+                                 proj4string = poly_burnt_rst@crs)
+
+# re sample bands
+#rst_for_prediction <- vector(mode = "list", length = length(rst_crop_lst))
+#names(rst_for_prediction) <- names(rst_crop_lst)
+
+brick_crop_burnt_p <- brick(crop_burnt_p)
+plot(crop_burnt_p$T21KWB_20201003T140059_B08_20m)
+
+# center and scale raster images
+brick_burnt_norm <- normImage(brick_crop_burnt_p)
+names(brick_burnt_norm) <- names(brick_crop_burnt_p)
+
+# extract band values to points
+burnt_dt <- brick_burnt_norm %>% 
+  extract(y = burnt_points) %>% 
+  as.data.table %>% 
+  .[, id_cls := burnt_points@data$id_cls] %>%  # add the class names to each row
+  merge(y = unique(poly_burnt@data), by.x = "id_cls", by.y = "id", all = TRUE, sort = FALSE) %>% 
+  .[, id_cls := NULL]
+
+View(burnt_dt)
+
+# histogram of predictors
+burnt_dt %>% 
+  select(-"burnt_area") %>% 
+  melt(measure.vars = names(.)) %>% 
+  ggplot() +
+  geom_histogram(aes(value)) +
+  geom_vline(xintercept = 0, color = "gray70") +
+  facet_wrap(facets = vars(variable), ncol = 3)
+
+# split into train and test
+set.seed(321)
+# A stratified random split of the data
+idx_train <- createDataPartition(burnt_dt$burnt_area,
+                                 p = 0.7, # percentage of data as training
+                                 list = FALSE)
+b_dt_train <- burnt_dt[idx_train]
+b_dt_test <- burnt_dt[-idx_train]
+
+table(b_dt_train$burnt_area)
+table(b_dt_test$burnt_area)
+
+# fit models
+# create cross-validation folds (splits the data into n random groups)
+n_folds <- 10
+set.seed(321)
+folds <- createFolds(1:nrow(b_dt_train), k = n_folds)
+# Set the seed at each resampling iteration. Useful when running CV in parallel.
+seeds <- vector(mode = "list", length = n_folds + 1) # +1 for the final model
+for(i in 1:n_folds) seeds[[i]] <- sample.int(1000, n_folds)
+seeds[n_folds + 1] <- sample.int(1000, 1) # seed for the final model
+
+ctrl <- trainControl(summaryFunction = multiClassSummary,
+                     method = "cv",
+                     number = n_folds,
+                     search = "grid",
+                     classProbs = TRUE, # not implemented for SVM; will just get a warning
+                     savePredictions = TRUE,
+                     index = folds,
+                     seeds = seeds)
+
+# Register a doParallel cluster, using 3/4 (75%) of total CPU-s
+cl <- makeCluster(3/4 * detectCores())
+registerDoParallel(cl)
+make.names(b_dt_train, unique = FALSE, allow_ = TRUE)
+model_rf <- caret::train(burnt_area ~ ., method = "rf", data = b_dt_train,
+                         importance = TRUE, # passed to randomForest()
+                         # run CV process in parallel;
+                         # see https://stackoverflow.com/a/44774591/5193830
+                         allowParallel = TRUE,
+                         tuneGrid = data.frame(mtry = c(2, 3, 4, 5, 8)),
+                         trControl = ctrl)
+
+stopCluster(cl); remove(cl)
+# Unregister the doParallel cluster so that we can use sequential operations
+# if needed; details at https://stackoverflow.com/a/25110203/5193830
+registerDoSEQ()
+saveRDS(model_rf, file = "./model_rf.rds")
+
+# Model summary & confusion matrix
+model_rf$times$everything # total computation time
+ggplot(model_rf) # tuning results
+
+# setting burnt_area to a factor
+burnt_area <- as.factor(b_dt_test$burnt_area)
+str(b_dt_test)
+
+test_predictions = predict(model_rf, b_dt_test)
+test_predictions
+
+# Compute the confusion matrix
+cm_burnt <- confusionMatrix(test_predictions, burnt_area)
+cm_burnt
+
+# Confusion matrix for the final model (entire train dataset)
+model_rf$finalModel
 
 
 
