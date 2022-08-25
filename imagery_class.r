@@ -455,6 +455,7 @@ burnt_area <- as.factor(b_dt_test$burnt_area)
 str(b_dt_test)
 
 test_predictions = predict(model_rf, b_dt_test)
+predictrf <- raster :: predict(object = burnt_p, model = model_rf, type = "raw") # raster of the supervised classification  
 test_predictions
 
 # Compute the confusion matrix
