@@ -404,7 +404,7 @@ idx_train <- createDataPartition(burnt_dt$burnt_area,
                                  p = 0.7, # percentage of data as training
                                  list = FALSE)
 b_dt_train <- burnt_dt[idx_train]
-b_dt_test <- burnt_dt[-idx_train]
+b_dt_test <- burnt_dt[idx_train]
 
 table(b_dt_train$burnt_area)
 table(b_dt_test$burnt_area)
